@@ -418,5 +418,229 @@ def ping():
 #   su -s ${USER}
 #   docker run -it --rm python:3.8.12-slim 
 
-if __name__ == "__main__":
-  app.run(debug=True, host='0.0.0.0', port=9696)
+# 6 Decision Trees
+# 6.1 Credit Risk Scoring Intro
+# 6.2 Data Cleaning and Prep
+df['status'] = df['status'].map({1: 'ok', 2: 'default', 0: 'unknown'})
+# THIS IS FROM HW4
+# .. other categorical
+df.describe()  # Reveals 99999999 = nan
+for c in ['income', 'assets', 'debt']:
+  df[c].replace(to_replace=df[c].max(), value=np.nan)
+
+df['status'].value_counts()
+df.loc[:, df['status'] != 'unknown'].reset_index(drop=True)
+
+fro sklearn.model_selection import train_test_split
+df_full_train, df_test = train_test_split(df, test_size=0.2, random_state=11)
+df_train, df_val = train_test_split(df_full_train, test_size=0.25, random_state=11)
+
+df_train = df_train.reset_index(drop=True)
+df_test = df_test.reset_index(drop=True)
+df_val = df_val.reset_index(drop=True)
+
+y_train = (df_train['status'] == 'default').astype(int).values
+y_val = (df_val['status'] == 'default').astype(int).values
+y_test = (df_test['status'] == 'default').astype(int).values
+
+del df_train['status']
+del df_val['status']
+del df_text['status']
+
+
+
+
+
+
+# 6.3 Decision Trees
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.feature_extraction import DictVectorizer
+from sklearn.metrics import roc_auc_score
+
+train_dicts = df_train.fillna(0).to_dict(orient='records')
+dv = DictVectorizer(sparse=False)
+X_train = dv.fit_transform(train_dicts)
+
+dt = DecisionTreeClassifier()
+dt.fit(X_train, y_train)
+
+val_dicts = df_val.fillna(0).to_dict(orient='records')
+X_val = dv.transform(val_dicts)
+y_pred = dt.predict_proba(X_val)[:, 1]  # Two columns, proba False|True
+roc_auc_score(y_val, y_pred)
+# == 0.65484 (Bad)
+
+# Check for overfitting
+y_prd = dt.predict_proba(X_train)[:, 1]
+roc_auc_score(y_train, y_pred)
+# == 1.0 (Perfect) -> Overfitting (due to infinite depth, memorized answers)
+
+
+# Restrict to 3 levels
+dt = DecisionTreeClassifier(max_depth=3)
+dt.fit(X_train, y_train)
+
+y_pred = dt.predict_proba(X_train)[:, 1]
+auc = roc_auc_score(y_train, y_pred)
+# 0.776
+
+y_pred = dt.predict_proba(X_val)[:, 1]
+auc = roc_auc_score(y_val, y_pred)
+# 0.739
+
+# Look inside tree
+from sklearn.tree import export_text
+print(export_text(dt, feature_names=dv.get_feature_names()))
+
+# 6.5 Decision Trees Parameter Tuning
+
+for d in [1, 2, 3, 4, 5, 6, 10, 15, 20, None]:
+  dt = DecisionTreeClassifier(max_depth=d)
+  dt.fit(X_train, y_train)
+  y_pred = dt.predict_proba(X_val)[:, 1]
+  auc = roc_auc_score(y_val, y_pred)
+  print(d, auc)
+
+#4, 5, 6 > 76%
+scores = []
+for d in [4, 5, 6]:
+  for s in [1, 2, 5, 10, 15, 20, 100, 200, 500]:
+    dt = DecisionTreeClassifier(max_depth=d, min_samples_leaf=s)
+    dt.fit(X_train, y_train)
+    y_pred = dt.predict_proba(X_val)[:, 1]
+    auc = roc_auc_score(y_val, y_pred)
+    scores.append((d, s, auc))
+
+df_scores = pd.DataFrame(
+  data=scores,
+  columns=['max_depth', 'min_samples_leaf', 'auc'],
+)
+df_scores.sort_values(by='auc', ascending=False).head()
+df_scores_pivot = df_scores.pivot(
+  index='min_samples_leaf',
+  columns='max_depth',
+  values='auc',
+)
+sns.heatmap(df_scores_pivot, annot=True, fmt='.3f')
+
+dt = DecisionTreeClassifier(max_depth=6, min_samples_leaf=15)
+dt.fit(X_train, y_train)
+
+# 6.6 Ensembles and random forest
+from sklearn.ensemble import RandomForestClassifier
+
+# n_estimators == "number of experts" or "number of trees"
+scores = []
+
+# Find best max_depth
+for d in [5, 10, 15]:
+  for n in range(10, 201, 10):
+    rf = RandomForestClassifier(
+      n_estimators=n,
+      max_depth=d,
+      random_state=1,
+    )
+    rf.fit(X_train, y_train)
+    y_pred = rf.predict_proba(X_val)[:, 1]
+    auc = roc_auc_score(y_val, y_pred)
+    scores.append((d, n, auc))
+
+df_scores = pd.DataFrame(
+  data=scores,
+  columns=['max_depth', 'n_estimators', 'auc'],
+)
+
+for d in [5, 10, 15]:
+  df_subset = df_scores[df_scores['max_depth'] == d]
+  plt.plot(
+    df_subset['n_estimators'],
+    df_subset['auc'],
+    label=f'max_depth={d}',
+  )
+max_depth = 10  # Best based on graph
+
+# Find best leaf size
+for s in [1, 3, 5, 10, 50]:
+  for n in range(10, 201, 10):
+    rf = RandomForestClassifier(
+      n_estimators=n,
+      max_depth=max_depth,
+      min_samples_leaf=s,
+      random_state=1,
+    )
+    rf.fit(X_train, y_train)
+    rf.predict_proba(X_val)[:, 1]
+    auc = roc_auc_score(y_val, y_pred)
+    scores.append((s, n, auc))
+
+df_scores = pd.DataFrame(
+  data=scores,
+  columns=['min_samples_leaf', 'n_estimators', 'auc'],
+)
+
+for s in [1, 3, 5, 10, 50]:
+  df_subset = df_scores[df_scores['min_samples_leaf'] == s]
+  plt.plot(
+    df_subset['n_estimators'],
+    df_subset['auc'],
+    label=f'min_samples_leaf={d}',
+  )
+
+# 1, 3, 5 decide best s = 3
+min_samples_leaf = 3
+n = 100
+rf = RandomForestClassifier(
+  n_estimators=n,
+  max_depth=max_depth,
+  min_samples_leaf=min_samples_leaf,
+  random_state=1,
+  n_jobs=-1,
+)
+rf.fit(X_train, y_train)
+rf.predict_proba(X_val)[:, 1]
+auc = roc_auc_score(y_val, y_pred)
+scores.append((s, n, auc))
+
+
+# 6.7 Gradient Boosting and XGBoost
+pip install xgboost
+
+import xgboost as xgb
+
+features = dv.get_feature_names()
+dtrain = xgb.DMatrix(X_train, label=y_train, feature_names=features)
+dval = xgb.DMatrix(X_val, label=y_val, feature_names=features)
+dtest = xgb.DMatrix(X_test, feature_names=features)  # No label
+
+xgb_params = {
+  'eta': 0.3,             # Learning rate
+  'max_depth': 6,
+  'min_child_weight': 1,  # Same as min_samples_leaf
+
+  'objective': 'binary:logistic', # Binary Classification, using logistic models
+  'eval_metric': 'auc',
+  'nthreads': 6,  # num cores
+
+  'seed': 1,
+  'verbosity': 1,
+}
+
+watchlist = [(dtrain, 'train'), (dval, 'val')]
+model = xgb.train(
+  xgb_params,
+  dtrain,
+  num_boost_round=10,
+  evals=watchlist,
+  verbose_eval=5,
+)
+y_pred = model.predict(dval)
+auc = roc_auc_score(y_val, y_pred)A
+
+# AUC goes to 1.0 on train, so the model overfits
+
+
+# 6.8 XGBoost Parameter Tuning
+
+
+# 6.9 Selecting the Best Model
+
