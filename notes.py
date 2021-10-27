@@ -634,7 +634,7 @@ model = xgb.train(
   verbose_eval=5,
 )
 y_pred = model.predict(dval)
-auc = roc_auc_score(y_val, y_pred)A
+auc = roc_auc_score(y_val, y_pred)
 
 # AUC goes to 1.0 on train, so the model overfits
 
