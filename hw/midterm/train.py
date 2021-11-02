@@ -1,3 +1,4 @@
+from collections import defaultdict
 import numpy as np
 import pandas as pd
 import os
@@ -200,3 +201,19 @@ with open(filepath, 'wb') as f:
     pickle.dump(model, f)
 
 print(f'Model saved to {filepath} (RMSE {rmse})')
+
+# Get available options for app dropdowns
+with open(os.path.join(FOLDER, 'dv.bin'), 'rb') as f:
+  dv = pickle.load(f)
+
+# Use DictVectorizer to get a list of categorical options
+options = defaultdict(list)
+for feature in filter(lambda x: '=' in x, dv.feature_names_):
+  feature, option = feature.split('=')
+  options[feature].append(option)
+
+# Save list to disk for Flask templates
+filepath = os.path.join(FOLDER, 'options.bin')
+with open(filepath, 'wb') as f:
+  pickle.dump(options, f)
+print(f'Model input options saved to {filepath}')
