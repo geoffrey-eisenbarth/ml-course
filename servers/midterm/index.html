@@ -1,0 +1,130 @@
+<html>
+<head>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" integrity="sha384-B0vP5xmATw1+K9KRQjQERJvTumQW0nPEzvF6L/Z6nronJ3oUOFUFpCjEUQouq2+l" crossorigin="anonymous">
+</head>
+<body>
+<div class="container">
+  <h1>Laptop Price Predictor</h1>
+  <form id="form" action="predict">
+    <div class="row">
+      <div class="col-4">
+        <div class="form-group">
+          <label>Company</label>
+          <select name="company" class="form-control">
+            {% for option in company %}
+            <option>{{ option }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="col-4">
+        <div class="form-group">
+          <label>Typename</label>
+          <select name="typename" class="form-control">
+            {% for option in typename %}
+            <option>{{ option }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="col-4">
+        <div class="form-group">
+          <label>Weight</label>
+          <input class="form-control" name="weight"></input>
+        </div>
+      </div>
+    </div> <!-- / row -->
+    <div class="row">
+      <div class="col-3">
+        <div class="form-group">
+          <label>CPU</label>
+          <select name="cpu" class="form-control">
+            {% for option in cpu_type %}
+            <option>{{ option }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="col-3">
+        <div class="form-group">
+          <label>CPU GHz</label>
+          <input class="form-control" name="cpu_ghz"></input>
+        </div>
+      </div>
+
+      <div class="col-3">
+        <div class="form-group">
+          <label>GPU</label>
+          <select name="gpu" class="form-control">
+            {% for option in gpu %}
+            <option>{{ option }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="col-3">
+        <div class="form-group">
+          <label>RAM</label>
+          <select name="ram" class="form-control">
+            {% for option in ram %}
+            <option>{{ option }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+    </div> <!-- / row -->
+    <div class="row">
+      <div class="col-6">
+        <div class="form-group">
+          <label>Storage</label>
+          <select name="memory1" class="form-control">
+            {% for option in memory1 %}
+            <option>{{ option }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="col-6">
+        <div class="form-group">
+          <label>Storage Type</label>
+          <select name="memory1_type" class="form-control">
+            {% for option in memory1_type %}
+            <option>{{ option }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+    </div> <!-- / row -->
+    <div class="row">
+      <div class="col-4">
+        <div class="form-group">
+          <label>Screen Size</label>
+          <select name="screensize" class="form-control">
+            {% for option in screensize %}
+            <option>{{ option }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="col-4">
+        <div class="form-group">
+          <label>Screen Inches</label>
+          <input class="form-control" name="inches"></input>
+        </div>
+      </div>
+      <div class="col-4">
+        <div class="form-group">
+          <label>Screen Type</label>
+          <select name="screentype" class="form-control">
+            {% for option in screentype %}
+            <option>{{ option }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+    </div> <!-- / row -->
+    <button type="submit" class="btn btn-primary">Predict Price</button>
+  </form>
+</div>
+</body>
+</html>

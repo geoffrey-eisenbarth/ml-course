@@ -10,7 +10,10 @@ COPY ["Pipfile", "Pipfile.lock", "./"]
 
 RUN pipenv install --system --deploy
 
-COPY ["predict.py", "model.bin",  "dv.bin", "./"]
+COPY ["predict.py", "model.bin", "dv.bin", "options.bin", "./"]
+
+RUN mkdir templates/
+COPY "index.html" "templates/"
 
 EXPOSE 9696
 
