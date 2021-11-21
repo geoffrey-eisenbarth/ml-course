@@ -416,7 +416,7 @@ def ping():
 #   sudo groupadd docker
 #   sudo usermod -aG docker ${USER}
 #   su -s ${USER}
-#   docker run -it --rm python:3.8.12-slim 
+#   docker run -it --rm python:3.8.12-slim
 
 # 6 Decision Trees
 # 6.1 Credit Risk Scoring Intro
@@ -643,4 +643,468 @@ auc = roc_auc_score(y_val, y_pred)
 
 
 # 6.9 Selecting the Best Model
+
+
+# 8.0 Neural Netowrks and Deep Learning
+# 8.1 Fashion Classification (Image Data)
+# Multiclass Classificaiton from Images
+
+# 8.2 TensorFlow and Keras
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras.preprocessing.image import load_img
+
+path = '../clothing-dataset-small/train/t-shirt'
+name = '[HASH]'
+img = load_img(f'{path}/{name}', target_size=(299, 299))  # PIL class
+x = np.array(img)
+x.shape # (299, 299, 3) array (3 = RGB) uint8 (unsigned, so 0-255)
+
+# 8.3 Pretrained convolutional neural networks
+# https://keras.io/api/applications/
+
+
+from tensorflow.keras.applications.xception import Xception
+model = Xception(
+  weights='imagenet',
+  input_shape=(299, 299, 3),
+)
+X = np.array([x]) # ([x, y, z]) for three images, etc
+model.predict(X)  # Output is zero, bc no preprocessing
+
+from tensorflow.keras.applications.xception import preprocess_input
+from tensorflow.keras.applications.xception import decode_predictions
+X = preprocess_input(X)  # Output not in 0-255, but [-1, 1], which model needs
+
+pred = model.predict(X)
+pred.shape # (1, 1000)
+decode_prediction(pred)A
+
+
+# 8.4 Convolutional Neural Networks
+"""
+Mostly used for images
+Made up of layers, two main ones are convolutional and dense
+Convolutional: Make up of "filters" of basic shapes that slide
+around the image and score the similarity between the basic shape and a
+cell-subset of the image. This produces a "Feature Map" for each basic
+shape (aka Feature)
+
+Pooling layers reduce the number of features in convolutional layers
+
+Output of Convolutional Layers is a vector. This can be the input of a
+dense layer, role of dense layer is to make final predicition.
+
+Binary Classification:
+Get weights from model, then vector * weights => summed => sigmoid
+for logisitic/single classification => outout is prob of being tshirt
+
+
+Multiclass Classification
+Three models, three weights (for shirts, t-shirt, dress)
+Calculate summed weights for each model, then we have probabilities of
+which of the tree it is. Sigmoid for multiple classes is called softmax
+this output will gives you three proba numbers.
+
+"""
+
+# 8.5 Transfer Learning
+"""
+Use already trained model on imagenet
+
+The part where image is turned into vector by conv layers
+is quite generic, and can be re-used for different models.
+It also requires lots of images and good training, but not
+specific to dataset (but Dense layer is specific to the problem)
+
+Keep conv layers from image net, but make our own dense ones.
+"""
+
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+train_gen = ImageDataGenerator(preprocessing_function=preprocess_input)
+train_ds = train_gen.flow_from_directory('./clothing-dataset-small/train/', target_size=(150, 150), batch_size=32)
+
+# Batch is (32, 150, 150, 3) (RGB)
+
+train_ds.class_indices # Class names come from folder names
+X, y = next(train_ds)
+X.shape (32, 150, 150, 3)
+y[:5] # Each row is a 1-hot classification according to the available classes
+
+
+val_gen = ImageDataGenerator(preprocessing_function=preprocess_input)
+val_ds = train_gen.flow_from_directory(
+  './clothing-dataset-small/validation/',
+  target_size=(150, 150),
+  batch_size=32,
+)
+
+base_model = Xception(
+  weights='imagenet',
+  include_top=False,  # only include convolutional layers, not dense ones
+  input_shape=(150, 150, 3)
+)
+base_model.trainable = False  # Don't want to train convo layers
+
+# Create new top/dense layer
+inputs = keras.Input(shape=(150, 150, 3))
+base = base_model(inputs)
+
+# WHAT DO TO HERE? use pooling (see below)
+outputs = base
+
+model = keras.Model(inputs, outputs)
+preds = model.predict(X)
+
+preds.shape # (32, 5, 5, 2048) (batch is 32, so the output is (5, 5, 2048)
+# Want to turn this (5, 5, 2048) into a 1-d vector
+# Use (2d-average) pooling to do this
+
+inputs = keras.Input(shape=(150, 150, 3))
+base = base_model(inputs)
+
+pooling = keras.layers.GlobalAveragePooling2D()
+vectors = pooling(base)
+
+outputs = vectors
+
+model = keras.Model(inputs, outputs)
+preds = model.predict(X)
+preds.shape # (32, 2048) 32 batch, 1d due to pooling
+
+# Now we need dense layer to turn 2048-d vector into output
+inputs = keras.Input(shape=(150, 150, 3))
+base = base_model(inputs, training=False)
+
+vectors = keras.layers.GlobalAveragePooling2D()(base)
+
+outputs = keras.layers.Dense(10)(vectors)  # 10 from # of multiclass
+# To apply softmax afterwards, use
+#outputs = keras.layers.Dense(10, activate='softmax')(vectors)  # 10 from # of multiclass
+
+model = keras.Model(inputs, outputs)
+preds = model.predict(X)
+preds.shape # (32, 10) 32 batch
+
+
+# Now we need to train the model, using an optimizer to get weights
+learning_rate = 0.01
+optimizer = keras.optimizers.Adam(learning_rate=learning_rate)
+loss = keras.losses.CategoricalCrossEntropy(
+  from_logits=True,  # Set to True if Dense layer has Softmax activation
+)
+#keras.losses.BinaryCrossEntropy()
+#keras.losses.MeanSquaredError() # For regression
+
+# Applying Softmax (sigmoid for multiclass) is called Activation
+
+model.compile(optimizer=optimizer, loss=loss, metrics=['accuracy'])
+history = model.fit(train_ds, epochs=10, validation_data=val_ds)
+
+plt.plot(history.history['accuracy'], label='train')
+plt.plot(history.history['val_accuracy'], label='val')
+
+
+# 8.6 Adjusting the learning rate
+"""
+Learning rate == "how fast you can read" => faster == skimming text
+                                            slower == taking notes, etc
+
+"""
+def make_model(learning_rate=0.01)
+  base_model = Xception(
+    weights='imagenet',
+    include_top=False,
+    input_shape=(150, 150, 3),
+  )
+  base_model.trainable = False
+
+  # Make model architecture
+  inputs = keras.Input(shape=(150, 150, 3))
+  base = base_model(inputs, training=False)
+  vectors = keras.layers.GlobalAveragePooling2D()(base)
+  outputs = keras.layers.Dense(10)(vectors)
+  model = keras.Model(inputs, outputs)
+  ##
+
+  learning_rate = 0.01
+  optimizer = keras.optimizers.Adam(learning_rate=learning_rate)
+
+  loss = keras.losses.CategoricalCrossEntropy(from_logits=True)
+
+  model.compile(
+    optimizer=optimizer,
+    loss=loss,
+    metrics=['accuracy'],
+  )
+
+  return model
+
+scores = {}
+for lr in [0.0001, 0.001, 0.01, 0.1]:
+  print(lr)
+  model = make_model(learning_rate=lr)
+  history = model.fit(train_ds, epochs=10, validation_data=val_ds)
+  scores[lr] = history.history
+  print()
+  print()
+
+del scores[0.1]
+del scores[0.0001]
+for lr, hist in scores.items():
+  plt.plot(history['val_accuracy'], label='val')
+  plt.xticks(np.arange(10))
+  plt.legend()
+
+# Go with 0.001
+
+# 8.7 Checkpointing
+"""
+Getting best model across eppochs (last one is not necessarily the
+best one). Done using callbacks after each epovchs
+
+"""
+
+checkpoint = keras.callbacks.ModelCheckpoint(
+  'xception_v1_{epoch:02d}_{val_accuracy:.3f}.h5',
+  save_best_only=True,
+  monitor='val_accuracy',
+  mode='max',
+) 
+
+learning_rate = 0.001
+model = make_model(learning_rate=lr)
+history = model.fit(
+  train_ds,
+  epochs=10,
+  validation_data=val_ds,
+  callbacks=[checkpoint],
+)
+
+# 8.8 Adding more (Dense) Layers
+
+"""
+Activation Functions
+  o Output
+    o Sigmoid
+    o Softmax 
+  o Intermediate
+    o ReLU ( Rectified Linear Unit)
+    o ...
+"""
+
+def make_model(learning_rate=0.01, size_inner=10):
+  base_model = Xception(
+    weights='imagenet',
+    include_top=False,
+    input_shape=(150, 150, 3),
+  )
+  base_model.trainable = False
+
+  # Make model architecture
+  inputs = keras.Input(shape=(150, 150, 3))
+  base = base_model(inputs, training=False)
+  vectors = keras.layers.GlobalAveragePooling2D()(base)
+
+  inner = keras.layers.Dense(size_inner, activation='relu')(vectors)
+
+  outputs = keras.layers.Dense(10)(inner)
+  model = keras.Model(inputs, outputs)
+  ##
+
+  learning_rate = 0.01
+  optimizer = keras.optimizers.Adam(learning_rate=learning_rate)
+
+  loss = keras.losses.CategoricalCrossEntropy(from_logits=True)
+
+  model.compile(
+    optimizer=optimizer,
+    loss=loss,
+    metrics=['accuracy'],
+  )
+
+  return model
+
+learning_rate = 0.001
+scores = {}
+for size in [10, 100, 1000]:
+  model = make_model(learning_rate=learning_rate, size_inner=size)
+  history = model.fit(train_ds, epochs=10, valdation_data=val_ds)
+  scores[size] = history.history
+
+# 8.9 Regularization and dropout
+"""
+Randomly hide part of the image so thing like logos don't
+get turned into signifiers for being a shirt (since that logo
+could be on a hat, etc)
+"""
+
+
+def make_model(learning_rate=0.01, size_inner=10, droprate=0.2):
+  base_model = Xception(
+    weights='imagenet',
+    include_top=False,
+    input_shape=(150, 150, 3),
+  )
+  base_model.trainable = False
+
+  # Make model architecture
+  inputs = keras.Input(shape=(150, 150, 3))
+  base = base_model(inputs, training=False)
+  vectors = keras.layers.GlobalAveragePooling2D()(base)
+
+  inner = keras.layers.Dense(size_inner, activation='relu')(vectors)
+  drop = keras.layers.Dropout(droprate)(inner)
+
+  outputs = keras.layers.Dense(10)(drop)
+  model = keras.Model(inputs, outputs)
+  ##
+
+  learning_rate = 0.01
+  optimizer = keras.optimizers.Adam(learning_rate=learning_rate)
+
+  loss = keras.losses.CategoricalCrossEntropy(from_logits=True)
+
+  model.compile(
+    optimizer=optimizer,
+    loss=loss,
+    metrics=['accuracy'],
+  )
+
+  return model
+
+learning_rate = 0.001
+size = 100
+scores = {}
+
+for droprate in [0.0, 0.2, 0.5, 0.8]:
+  model = make_model(
+    learning_rate=learning_rate,
+    size_inner=size,
+    droprate=droprate,
+  )
+  history = model.fit(train_ds, epochs=30, valdation_data=val_ds)
+  scores[size] = history.history
+
+
+# 8.10 Data Augmentation
+"""
+Create new data from old
+  o vert & horiz flip image
+  o rotate image
+  o height shift
+  o width shift
+  o shear
+  o zoom in/out
+  o brightness/contract
+"""
+train_gen = ImageDataGenerator(
+  preprocessing_function=preprocess_input
+  rotation_range=30,
+  width_shift_range=10.0,
+  height_shift_range=10.0,
+  shear_range=10,
+  zoom_range=0.1,
+  horizontal_flip=False,
+  vertical_flip=True,
+)
+train_ds = train_gen.flow_from_directory(
+  './clothing-dataset-small/train',
+  target_size=(150, 150),
+  batch_size=32,
+)
+
+val_gen = ImageDataGenerator(
+  preprocessing_function=preprocess_input
+)
+
+# Do not apply augmentation to validation_ds
+val_ds = val_gen.flow_from_directory(
+  './clothing-dataset-small/validation',
+  target_size=(150, 150),
+  batch_size=32,
+  shuffle=False,
+)
+learning_rate = 0.001
+size = 100
+droprate = 0.2
+
+for droprate in [0.0, 0.2, 0.5, 0.8]:
+  model = make_model(
+    learning_rate=learning_rate,
+    size_inner=size,
+    droprate=droprate,
+  )
+  history = model.fit(train_ds, epochs=50, valdation_data=val_ds)
+  scores[size] = history.history
+
+
+
+# 8.11 Training a larger model
+
+def make_model(input_size=150, learning_rate=0.01, size_inner=10, droprate=0.2):
+  base_model = Xception(
+    weights='imagenet',l
+    include_top=False,
+    input_shape=(input_size, input_size, 3),
+  )
+  base_model.trainable = False
+
+  # Make model architecture
+  inputs = keras.Input(shape=(150, 150, 3))
+  base = base_model(inputs, training=False)
+  vectors = keras.layers.GlobalAveragePooling2D()(base)
+
+  inner = keras.layers.Dense(size_inner, activation='relu')(vectors)
+  drop = keras.layers.Dropout(droprate)(inner)
+
+  outputs = keras.layers.Dense(10)(drop)
+  model = keras.Model(inputs, outputs)
+  ##
+
+  learning_rate = 0.01
+  optimizer = keras.optimizers.Adam(learning_rate=learning_rate)
+
+  loss = keras.losses.CategoricalCrossEntropy(from_logits=True)
+
+  model.compile(
+    optimizer=optimizer,
+    loss=loss,
+    metrics=['accuracy'],
+  )
+
+  return model
+
+# 8.12 Using the model
+import tensorflow as tf
+from tensorflow import feras
+model = keras.models.load_model('xception_v4_1_13_0.903.h5')
+
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.applications.xception import preprocess_input
+
+test_gen = ImageDataGenerator(preprocessing_function=preprocess_input)
+
+test_ds = test_gen.flow_from_directory(
+  './clothing-dataset-small/test',
+  target_size=(299, 299),
+  batch_size=32,
+  shuffle=False,
+)
+
+model.evaluate(test_ds) # Returns tuple (cat_cross_entropy, accuracy)
+path = 'clothing-dataset-small/test/pants/<uuid>'
+img = load_img(path, target_size=(299, 299))
+x = nparray(img)
+X = np.array([x])
+X = preprocess_input(X)
+pred = model.predict(X)
+pred[0]
+
+classes = [
+  'pant',
+  'shirt',
+  'etc',
+]
+dict(zip(classes, pred[0]))
 
