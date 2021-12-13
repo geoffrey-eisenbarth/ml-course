@@ -5,6 +5,7 @@
 <body>
 <div class="container">
   <h1>ESRB Rating Predictor</h1>
+  <h4>Check all that apply</h4>
   <form id="form" action="predict">
     <div class="row">
       <div class="col-12">
@@ -97,6 +98,7 @@
           <input type="checkbox" name="strong_language">
           <label>Strong Language</label>
         </div>
+        <div class="custom-control custom-checkbox">
           <input type="checkbox" name="mild_lyrics">
           <label>Mild Lyrics</label>
         </div>
@@ -148,7 +150,7 @@
         </div>
       </div>
     </div>
-    <button type="submit" class="btn btn-primary">Predict Price</button>
+    <button type="submit" class="btn btn-primary">Predict Rating</button>
   </form>
 </div>
 </body>
