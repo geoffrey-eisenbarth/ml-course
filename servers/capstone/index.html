@@ -1,0 +1,155 @@
+<html>
+<head>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" integrity="sha384-B0vP5xmATw1+K9KRQjQERJvTumQW0nPEzvF6L/Z6nronJ3oUOFUFpCjEUQouq2+l" crossorigin="anonymous">
+</head>
+<body>
+<div class="container">
+  <h1>ESRB Rating Predictor</h1>
+  <form id="form" action="predict">
+    <div class="row">
+      <div class="col-12">
+        <h2>Substances and Gambling</h2>
+        <div class="custom-control custom-checkbox">
+          <input type="checkbox" name="alcohol_reference">
+          <label>Alcohol Reference</label>
+        </div>
+        <div class="custom-control custom-checkbox">
+          <input type="checkbox" name="drug_reference">
+          <label>Drug Reference</label>
+        </div>
+
+        <div class="custom-control custom-checkbox">
+          <input type="checkbox" name="use_of_alcohol">
+          <label>Use of Alcohol</label>
+        </div>
+        <div class="custom-control custom-checkbox">
+          <input type="checkbox" name="use_of_drugs_and_alcohol">
+          <label>Use of Drugs and Alcohol</label>
+        </div>
+        <div class="custom-control custom-checkbox">
+          <input type="checkbox" name="simulated_gambling">
+          <label>Simulated Gambling</label>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-12">
+        <h2>Violence</h2>
+        <div class="custom-control custom-checkbox">
+          <input type="checkbox" name="animated_blood">
+          <label>Animated Blood</label>
+        </div>
+        <div class="custom-control custom-checkbox">
+          <input type="checkbox" name="mild_blood">
+          <label>Mild Blood</label>
+        </div>
+        <div class="custom-control custom-checkbox">
+          <input type="checkbox" name="blood">
+          <label>Blood</label>
+        </div>
+        <div class="custom-control custom-checkbox">
+          <input type="checkbox" name="blood_and_gore">
+          <label>Blood and Gore</label>
+        </div>
+        <div class="custom-control custom-checkbox">
+          <input type="checkbox" name="mild_cartoon_violence">
+          <label>Mild Cartoon Violence</label>
+        </div>
+        <div class="custom-control custom-checkbox">
+          <input type="checkbox" name="cartoon_violence">
+          <label>Cartoon Violence</label>
+        </div>
+        <div class="custom-control custom-checkbox">
+          <input type="checkbox" name="mild_fantasy_violence">
+          <label>Mild Fantasy Violence</label>
+        </div>
+        <div class="custom-control custom-checkbox">
+          <input type="checkbox" name="fantasy_violence">
+          <label>Fantasy Violence</label>
+        </div>
+        <div class="custom-control custom-checkbox">
+          <input type="checkbox" name="violence">
+          <label>Violence</label>
+        </div>
+        <div class="custom-control custom-checkbox">
+          <input type="checkbox" name="mild_violence">
+          <label>Mild Violence</label>
+        </div>
+        <div class="custom-control custom-checkbox">
+          <input type="checkbox" name="intense_violence">
+          <label>Intense Violence</label>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col">
+        <h2>Language</h2>
+
+        <div class="custom-control custom-checkbox">
+          <input type="checkbox" name="mild_language">
+          <label>Mild Language</label>
+        </div>
+        <div class="custom-control custom-checkbox">
+          <input type="checkbox" name="language">
+          <label>Language</label>
+        </div>
+        <div class="custom-control custom-checkbox">
+          <input type="checkbox" name="strong_language">
+          <label>Strong Language</label>
+        </div>
+          <input type="checkbox" name="mild_lyrics">
+          <label>Mild Lyrics</label>
+        </div>
+        <div class="custom-control custom-checkbox">
+          <input type="checkbox" name="lyrics">
+          <label>Lyrics</label>
+        </div>
+        <div class="custom-control custom-checkbox">
+          <input type="checkbox" name="crude_humor">
+          <label>Crude Humor</label>
+        </div>
+        <div class="custom-control custom-checkbox">
+          <input type="checkbox" name="mature_humor">
+          <label>Mature Humor</label>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col">
+        <h2>Sexual Content</h2>
+
+        <div class="custom-control custom-checkbox">
+          <input type="checkbox" name="partial_nudity">
+          <label>Partial Nudity</label>
+        </div>
+        <div class="custom-control custom-checkbox">
+          <input type="checkbox" name="nudity">
+          <label>Nudity</label>
+        </div>
+        <div class="custom-control custom-checkbox">
+          <input type="checkbox" name="sexual_content">
+          <label>Sexual Content</label>
+        </div>
+        <div class="custom-control custom-checkbox">
+          <input type="checkbox" name="strong_sexual_content">
+          <label>Strong Sexual Content</label>
+        </div>
+        <div class="custom-control custom-checkbox">
+          <input type="checkbox" name="mild_suggestive_themes">
+          <label>Mild Suggestive Themes</label>
+        </div>
+        <div class="custom-control custom-checkbox">
+          <input type="checkbox" name="suggestive_themes">
+          <label>Suggestive Themes</label>
+        </div>
+        <div class="custom-control custom-checkbox">
+          <input type="checkbox" name="sexual_themes">
+          <label>Sexual Themes</label>
+        </div>
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary">Predict Price</button>
+  </form>
+</div>
+</body>
+</html>

@@ -1108,3 +1108,87 @@ classes = [
 ]
 dict(zip(classes, pred[0]))
 
+
+
+# 9 SERVERLESS #
+
+# 9.1 Introduction
+# 9.2 AWS Lambda
+# 9.3 TensorFlow Lite
+"""
+Only inference (prediciton) not model training.
+
+"""
+
+pip install --extra-index-url https://google-coral.github.io/py-repo/ tflite_runtime
+import tensorflow_runtime as tflite
+from keras_image_helper import create_preprocessor
+
+
+interpreter = tflite.Interpreter(model_path='clothing-model.tflite')
+interpreter.allocate_tensors()  # Set weights
+
+input_index = interpreter.get_input_details()[0]['index']
+output_index = interpreter.get_output_details()[0]['index']
+
+preprocessor = create_preprocessor('xception', target_size=(299, 299))
+
+classes = [
+  'dress',
+  'hat',
+  ...
+]
+
+def predict(url):
+  X = preprocessor.from_url(url)
+
+  interpreter.set_tensor(input_index, X)
+  interpreter.invoke()
+  preds = interpretor.get_tensor(output_index)
+
+  float_predictions = preds[0].tolist()
+
+  return dict(zip(classes, float_predictions))
+
+# 9.4 Preparing for AWS Lambda
+def lambda_handler(event, context):
+    url = event['url']
+    result = predict(url)
+    return result
+
+
+# 9.5 Prep Docker Image
+
+#Dockerfile
+FROM public.ecr.aws/lambda/python:3.8
+
+RUN pip install keras-image-helper
+RUN pip install https://github.com/alexeygrigorev/tflite-aws-lambda/raw/main/tflite/tflite_runtime-2.7.0-cp38-cp38-linux_x86_64.whl
+COPY clothing-model.tflite .
+COPY lambda_function.py .
+
+CMD [ "lambda_function.lambda_handler" ]
+
+
+$ docker build -t clothing-model . 
+$ docker run -it --rm clothing-model:latest -p :8080:8080
+
+
+import requests
+url = 'http://localhost:8080/2015-03-31/functions/invocations/'
+data = {
+  'url': 'http://bit.ly/mlbookcamp-pants/',
+}
+response = requets.post(url, json=data).json()
+
+# 9.6 Creating the Lambda Function
+# Publish Docker contianer to Amazon Elastic Container Registry
+$ pip install aswcli
+$ aws configure
+$ aws ecr create-repository --repository-name clothing-tflite-images
+
+Copy URI
+
+$ aws ecr get-login --no-include-email
+<run the output of this ocmmand>
+

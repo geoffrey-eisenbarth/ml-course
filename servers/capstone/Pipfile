@@ -9,9 +9,6 @@ scikit-learn = "==1.0"
 Flask = "*"
 gunicorn = "*"
 ipython = "*"
-tensorflow = "*"
-keras-image-helper = "*"
-pillow = "*"
 
 [dev-packages]
 requests = "*"
