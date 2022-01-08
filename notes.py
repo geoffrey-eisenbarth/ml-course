@@ -1192,3 +1192,54 @@ Copy URI
 $ aws ecr get-login --no-include-email
 <run the output of this ocmmand>
 
+
+
+#HW 10:
+
+import tensorflow as tf
+from tensorflow import keras
+model = keras.models.load_model('./clothing-model-v4.h5')
+tf.saved_model.save(model, 'clothing-model')
+
+# CLI
+$ saved_model_cli show --dir clothing-model --all
+
+# Docker
+docker run -it --rm \
+    -p 8500:8500  # Port mapping
+    -v "$(pwd)/clothing-model:/models/clothing-model/1"  # Volume mapping
+    -e MODEL_NAME="clothing_model" \
+    tenserflow/serving:2.7.0  # Image name
+
+# Requirements
+pip install grpcio==1.42.0 tensorflow-serving-api==2.7.0
+pip install keras-image-helper
+
+import grpc
+import tensorflow as tf
+from tensorflow_serving.api import predict_pb2, prediction_service_pb2_grbc
+from keras_image_helper import create_preprocessor
+
+host = 'localhost:8500'
+channel = grpc.insecure_channel(host)
+stub = prediction_service_pb2_grbc.PredictionServiceStub(channel)
+
+preprocessor = create_preprocessor('xception', target_size=(299, 299))
+url = 'https://bit.ly/mlbookcamp-pants'
+X = preprocessor.from_url(url)
+
+
+def np_to_protobuf(data):
+    return tf.make_tensor_proto(data, shape=data.shape)
+# PRepare request
+pb_request = predict_pb2.PredictRequest()
+pb_request.model_spec.name = 'clothing-model'
+pb_request.model_spec.signature_name = 'serving_default'
+pb_request.inputs['input_8'].CopyFrom(np_to_protobuf(X))
+
+
+pb_response = stub.Predict(pb_request, timeout=20)
+preds = pb_response.outputs['dense_7'].float_val
+classes = ['pants', 'etc']
+dict(zip(classes, preds))
+
